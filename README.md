@@ -2,7 +2,7 @@
 ## Background
 I have once heard a fascinating factoid:
 
-> If you scramble all the letters in a word, excluding the first and last, it will still be (mostly) legible to most people.
+> If you scramble the letters in a word between the first and last, it will still be (mostly) legible to most people.
 
 In order to experience this more dynamically, I have created this plugin.
 
