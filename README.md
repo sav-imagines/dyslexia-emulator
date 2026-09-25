@@ -13,7 +13,7 @@ It scrambles the inner letters of all words.
 To install with lazy:
 ```lua
 {
-  "dyslexia-emulator",
+  "sav-imagines/dyslexia-emulator",
   opts = {},
 }
 ```
