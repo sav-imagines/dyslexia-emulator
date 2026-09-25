@@ -20,7 +20,7 @@ To install with lazy:
 
 ## Configuration
 You can provide a threshold (0-1) for how often you want a word to be scrambled:
-0 means everything, and 1 means everything will be scrambled.
+0 means everything, and 1 means nothing will be scrambled.
 ```lua
 {
   threshold = 0.9
