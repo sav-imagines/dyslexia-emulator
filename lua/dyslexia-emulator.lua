@@ -1,3 +1,9 @@
+local MARK_NS = vim.api.nvim_create_namespace("DYSLEXIA-VT")
+local HL = "DYSLEXIA-HL"
+local HL_GROUP = vim.api.nvim_set_hl(0, HL, {
+	-- bg = "#ff00ff",
+})
+
 local M = {
 	threshold = 0,
 }
@@ -40,32 +46,49 @@ function M._shuffle_word(word)
 	return out
 end
 
-function M._scramble_line(line)
-	local total_line = ""
+function M._get_word(row, col, word)
+	local mouse_pos = vim.api.nvim_win_get_cursor(0)
+	local is_hovered = row + 1 == mouse_pos[1] and col <= mouse_pos[2] and mouse_pos[2] < (col + #word)
+	if is_hovered then
+		return word
+	end
+	return M._shuffle_word(word)
+end
+
+function M._scramble_line(line, lineIdx, bufIdx)
 	local last_word = ""
+	local last_col_start = 0
 	for i = 1, #line do
 		local current_char = string.sub(line, i, i)
 		if current_char == " " then
-			total_line = string.format("%s%s ", total_line, M._shuffle_word(last_word))
+			vim.api.nvim_buf_set_extmark(bufIdx, MARK_NS, lineIdx, last_col_start, {
+				virt_text = { { M._get_word(lineIdx, last_col_start, last_word), HL } },
+				virt_text_pos = "overlay",
+			})
 			last_word = ""
+		elseif last_word == "" then
+			last_col_start = i - 1 -- set start of new word
+			last_word = last_word .. current_char -- append current char
 		else
-			last_word = string.format("%s%s", last_word, current_char)
+			last_word = last_word .. current_char -- append current char
 		end
 	end
-	total_line = string.format("%s%s", total_line, M._shuffle_word(last_word))
-	last_word = ""
-	return total_line
+	if last_word ~= "" then
+		vim.api.nvim_buf_set_extmark(bufIdx, MARK_NS, lineIdx, last_col_start, {
+			virt_text = { { M._get_word(lineIdx, last_col_start, last_word), HL } },
+			virt_text_pos = "overlay",
+		})
+	end
 end
 
 function M.scramble_buffer()
+	print("A")
 	local buf = vim.api.nvim_get_current_buf()
+	vim.api.nvim_buf_clear_namespace(buf, MARK_NS, 0, -1)
 	local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-	local edited_lines = {}
-	for _, line in pairs(lines) do
-		local result = M._scramble_line(line)
-		table.insert(edited_lines, result)
+	for i, line in pairs(lines) do
+		M._scramble_line(line, i - 1, buf)
 	end
-	vim.api.nvim_buf_set_lines(buf, 0, #lines, true, edited_lines)
 end
 
 ---@param opts table<string,any>
@@ -75,6 +98,10 @@ function M.setup(opts)
 	M.threshold = opts.threshold or 1
 
 	vim.api.nvim_create_user_command("ScrambleBuffer", M.scramble_buffer, {})
+	vim.api.nvim_create_autocmd({ "InsertLeave", "CursorMoved" }, {
+		pattern = "*.md",
+		callback = M.scramble_buffer,
+	})
 end
 
 return M
